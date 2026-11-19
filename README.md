@@ -1,8 +1,7 @@
 # SISMIP — Simulador de Eficiência Energética e Controle Preditivo (Museu Imperial / Ibram)
 
 **UFCI/RJ — Campus Petrópolis | Bacharelado em Engenharia da Computação**  
-**Avaliação P2: Tecnologia para Sustentabilidade (2026)**  
-**Equipe:** Elisa Lacerda Moura, Marcos Oliveira do Rego, Pedro Lucas Gomes Soares e Pedro Rodrigues Couto.
+**Avaliação P2: Tecnologia para Sustentabilidade (2026)**
 
 ---
 

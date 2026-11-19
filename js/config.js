@@ -19,10 +19,10 @@ window.MuseuSim.CONFIG = {
     universidade: 'UFCI/RJ — Campus Petrópolis | Engenharia da Computação',
     disciplina: 'Avaliação P2: Tecnologia para Sustentabilidade (2026)',
     autores: [
-      'Elisa Lacerda Moura',
-      'Marcos Oliveira do Rego',
-      'Pedro Lucas Gomes Soares',
-      'Pedro Rodrigues Couto'
+      'Elisa',
+      'Marcos',
+      'Pedro Lucas',
+      'Pedro Rodrigues'
     ]
   },
 
