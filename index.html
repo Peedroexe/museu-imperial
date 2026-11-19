@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SISMIP · Museu Imperial de Petrópolis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=JetBrains+Mono:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ==================== CABEÇALHO ==================== -->
+  <header class="topbar">
+    <div class="brand-group">
+      <div class="brand-crest" aria-hidden="true">MI</div>
+      <div class="brand-titles">
+        <h1>Museu Imperial <span class="brand-sep">·</span> SISMIP</h1>
+        <p>Simulador de monitoramento sem fio e controle preditivo da umidade</p>
+      </div>
+    </div>
+
+    <div class="live-strip" aria-label="Estado da simulação">
+      <div class="clock-box" title="Horário simulado (cada passo vale 10 min)">
+        <span class="clock-label">Hora simulada</span>
+        <span id="clock-display">17:10</span>
+      </div>
+      <div class="live-info">
+        <span id="tariff-badge" class="status-pill pill-ok">Fora da ponta</span>
+        <div id="weather-pill" class="weather-pill">Lá fora: 19,0 °C · 81% UR</div>
+      </div>
+    </div>
+
+    <div class="sim-controls" aria-label="Controles da simulação">
+      <button type="button" id="btn-play-pause" class="btn btn-active">Pausar</button>
+      <button type="button" id="btn-step-10m" class="btn" title="Avançar uma leitura (10 min)">+10 min</button>
+      <select id="select-sim-speed" class="select-compact" aria-label="Velocidade da simulação">
+        <option value="2800">Velocidade 1x</option>
+        <option value="1600" selected>Velocidade 2x</option>
+        <option value="550">Velocidade 6x</option>
+      </select>
+      <button type="button" id="btn-reset-sim" class="btn" title="Recomeçar o dia simulado">Recomeçar</button>
+    </div>
+  </header>
+
+  <!-- ==================== NAVEGAÇÃO ==================== -->
+  <nav class="nav-bar" aria-label="Módulos do simulador">
+    <div class="main-tabs">
+      <button type="button" class="tab-btn active" data-tab-target="supervisorio"><span class="tab-num">1</span>Planta e sensores</button>
+      <button type="button" class="tab-btn" data-tab-target="mpc"><span class="tab-num">2</span>Controle preditivo</button>
+      <button type="button" class="tab-btn" data-tab-target="lorawan"><span class="tab-num">3</span>Rede e dados</button>
+      <button type="button" class="tab-btn" data-tab-target="solar"><span class="tab-num">4</span>Solar e custos</button>
+    </div>
+    <div class="nav-actions">
+      <a id="btn-go-slides" class="btn btn-slides" href="slides.html">Ir para os slides</a>
+      <button type="button" id="btn-open-about" class="btn btn-ghost">Sobre o projeto</button>
+      <button type="button" id="btn-theme-toggle" class="btn btn-ghost" title="Tema claro de alto contraste para projetor">Modo projetor</button>
+    </div>
+  </nav>
+
+  <!-- ==================== CONTEÚDO PRINCIPAL ==================== -->
+  <main class="app-container">
+    <div class="scenario-bar" aria-label="Cenário simulado">
+      <span class="scenario-label">Cenário</span>
+      <div class="scenario-chips">
+        <button type="button" class="chip-btn active" data-scenario="normal">Dia típico</button>
+        <button type="button" class="chip-btn" data-scenario="nevoeiro">Nevoeiro serrano</button>
+        <button type="button" class="chip-btn" data-scenario="chuva_verao">Chuva de verão</button>
+        <button type="button" class="chip-btn" data-scenario="excursao">Excursão de visitantes</button>
+        <button type="button" class="chip-btn" data-scenario="som_e_luz">Som e Luz</button>
+      </div>
+      <button type="button" class="chip-btn chip-jump" id="btn-jump-preponta" title="Pular para 17:20 e ver o controle se antecipar ao horário de ponta">Ir para 17:20, antes da ponta</button>
+    </div>
+
+    <!-- FAIXA GLOBAL DE INDICADORES DE DESEMPENHO (KPIs) -->
+    <section class="kpi-grid" aria-label="Indicadores Principais da Simulação">
+      <div class="kpi-card kpi-emerald">
+        <div class="kpi-label">Economia na desumidificação</div>
+        <div class="kpi-value text-emerald" id="kpi-economia-pct">-30.4%</div>
+        <div class="kpi-sub" id="kpi-economia-sub">Meta do relatório (Seção 3.5): 25% a 35%</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Tempo dentro da faixa</div>
+        <div class="kpi-value text-cyan" id="kpi-estabilidade">98.2%</div>
+        <div class="kpi-sub" id="kpi-estabilidade-sub">Higrostato Convencional: 78.5%</div>
+      </div>
+
+      <div class="kpi-card kpi-gold">
+        <div class="kpi-label">Demanda elétrica agora</div>
+        <div class="kpi-value" id="kpi-demanda">1.65 kW</div>
+        <div class="kpi-sub" id="kpi-demanda-sub">Escalonamento ativo evita picos na ponta</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Acervo e rede sem fio</div>
+        <div class="kpi-value text-emerald" id="kpi-seguranca">100% Seguro</div>
+        <div class="kpi-sub" id="kpi-seguranca-sub">Ponto de Orvalho de Magnus monitorado</div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         ABA 1: PLANTA ARQUITETÔNICA INTERATIVA & PAINEL SUPERVISÓRIO
+    ========================================================================= -->
+    <section id="tab-supervisorio" class="tab-panel active">
+      <div class="supervisor-layout">
+        <!-- COLUNA PRINCIPAL: PLANTAS DO MUSEU + ZONAS + GRÁFICOS AO VIVO -->
+        <div>
+          <div class="card">
+            <div class="floorplan-toolbar">
+              <div class="segmented-group" role="tablist" aria-label="Escolha a planta do Museu Imperial">
+                <button type="button" class="seg-btn active" data-floor-view="palacio">Palácio, térreo</button>
+                <button type="button" class="seg-btn" data-floor-view="reserva">Reserva técnica</button>
+                <button type="button" class="seg-btn" data-floor-view="complexo">Complexo</button>
+              </div>
+
+              <div class="toolbar-right">
+                <div class="segmented-group">
+                  <button type="button" class="seg-btn active" data-color-mode="ibram">Setores</button>
+                  <button type="button" class="seg-btn" data-color-mode="heatmap">Umidade</button>
+                </div>
+                <button type="button" id="btn-toggle-repeater" class="btn active" title="Ativar/desativar repetidor LoRaWAN para vencer paredes espessas">
+                  Repetidor: ligado
+                </button>
+              </div>
+            </div>
+
+            <!-- Palco Vetorial Interativo da Planta -->
+            <div id="floorplan-stage"></div>
+
+            <!-- Cards rápidos das 6 zonas monitoradas -->
+            <div id="zones-mini-strip" class="zones-mini-strip"></div>
+          </div>
+
+          <!-- Gráficos duplos abaixo da planta -->
+          <div class="dual-charts-row">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title" id="chart-ur-zone-title">Umidade relativa — P-01</h3>
+                <span class="kpi-sub">Últimas 12 h</span>
+              </div>
+              <div class="chart-box">
+                <canvas id="canvas-ur-comparativo"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title" id="chart-fan-zone-title">Próximos 60 min: 64 sequências testadas</h3>
+                <span class="kpi-sub">6 passos de 10 min</span>
+              </div>
+              <div class="chart-box">
+                <canvas id="canvas-mpc-fan-mini"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLUNA DIREITA: INSPETOR DA ZONA SELECIONADA + CENTRAL DE ALERTAS TELEGRAM -->
+        <aside class="right-sidebar">
+          <div class="card">
+            <div class="insp-badge-row">
+              <span class="insp-code-pill" id="insp-codigo">P-01</span>
+              <h3 class="card-title" id="insp-nome">Sala Expositiva — Ala Esquerda</h3>
+            </div>
+            <p class="insp-sub" id="insp-edificio">Edifício nº 13 — Palácio Imperial (Térreo)</p>
+            <div class="insp-acervo-box" id="insp-acervo">
+              Mobiliário imperial em jacarandá, retratos a óleo e indumentária de corte
+            </div>
+
+            <div class="insp-metrics-grid">
+              <div class="insp-metric">
+                <div class="insp-lbl">Umidade relativa</div>
+                <div class="insp-val text-emerald" id="insp-ur">51.8%</div>
+                <div class="insp-hint" id="insp-ur-conv">Convencional: 55.4%</div>
+              </div>
+              <div class="insp-metric">
+                <div class="insp-lbl">Temperatura</div>
+                <div class="insp-val" id="insp-temp">20.5 °C</div>
+                <div class="insp-hint">Faixa ICOM-CC: 16°C–25°C</div>
+              </div>
+              <div class="insp-metric">
+                <div class="insp-lbl">Ponto de orvalho</div>
+                <div class="insp-val text-cyan" id="insp-orvalho">10.2 °C</div>
+                <div class="insp-hint" id="insp-parede">Parede fria: 18.9°C</div>
+              </div>
+              <div class="insp-metric">
+                <div class="insp-lbl">Desumidificador</div>
+                <div class="insp-val" id="insp-potencia">0.00 kW</div>
+                <div class="insp-hint" id="insp-lora">-76 dBm · Bat 94%</div>
+              </div>
+            </div>
+
+            <div class="mpc-seq-box">
+              <div class="insp-lbl">Plano para os próximos 60 min (só o 1º passo é executado)</div>
+              <div class="mpc-seq-row" id="insp-mpc-seq"></div>
+            </div>
+
+            <label class="control-section-lbl" for="select-zone-profile">Faixa de conservação</label>
+            <select id="select-zone-profile" class="input-full">
+              <option value="reserva_operacional">Reserva piloto: 48% a 54% UR</option>
+              <option value="acervo_sensivel">Acervo misto sensível: 45% a 55% UR</option>
+              <option value="icom_geral">Diretriz geral ICOM-CC: 40% a 60% UR</option>
+            </select>
+
+            <span class="control-section-lbl">Modo de controle</span>
+            <div class="segmented-group seg-3">
+              <button type="button" class="seg-btn active" data-ctrl-mode="mpc">Preditivo</button>
+              <button type="button" class="seg-btn" data-ctrl-mode="seguro">Modo seguro</button>
+              <button type="button" class="seg-btn" data-ctrl-mode="manual">Manual</button>
+            </div>
+
+            <div id="manual-override-box" style="display:none; flex-direction:column;">
+              <button type="button" id="btn-manual-actuator" class="btn-full btn-cyan">
+                Ligar ou desligar o desumidificador
+              </button>
+            </div>
+
+            <button type="button" id="btn-toggle-lora-zone" class="btn-full btn-warn-outline">
+              Simular queda do sinal LoRa nesta zona
+            </button>
+          </div>
+
+          <!-- Central de Alertas Telegram & E-mail -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Alertas enviados à equipe</h3>
+              <button type="button" id="btn-test-telegram" class="btn btn-small">Enviar teste</button>
+            </div>
+            <div id="alerts-feed-list" class="alerts-feed"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         ABA 2: ENSAIO COMPARATIVO & MOTOR DE CONTROLE PREDITIVO (64 COMBINAÇÕES)
+    ========================================================================= -->
+    <section id="tab-mpc" class="tab-panel">
+      <!-- Fluxo em Tempo Real da Figura 2 do Relatório -->
+      <div class="flow-diagram-bar">
+        <div class="flow-step">
+          <div class="flow-step-title"><span class="flow-num">1</span>Sensores</div>
+          <div class="flow-step-val" id="flow-sensor-val">P-01: 51.5% UR</div>
+          <div class="flow-step-desc">Temperatura, umidade e consumo a cada 10 min, sem furos</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title"><span class="flow-num">2</span>Gateway LoRaWAN</div>
+          <div class="flow-step-val" id="flow-gw-val">Online (-76 dBm)</div>
+          <div class="flow-step-desc">Recebe as leituras e guarda cópia local</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title"><span class="flow-num">3</span>Controlador preditivo</div>
+          <div class="flow-step-val" id="flow-mpc-val">Ótima: [100000]</div>
+          <div class="flow-step-desc">Calcula o orvalho e testa as 64 sequências</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-title"><span class="flow-num">4</span>Desumidificador</div>
+          <div class="flow-step-val" id="flow-act-val">ACIONADO</div>
+          <div class="flow-step-desc">Executa o 1º comando e recalcula na próxima leitura</div>
+        </div>
+      </div>
+
+      <div class="two-col-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">As 64 trajetórias testadas · <span id="mpc-selected-zone-label">P-01</span></h3>
+            <span class="kpi-sub">60 min à frente</span>
+          </div>
+          <div class="chart-box-large">
+            <canvas id="canvas-mpc-fan-large"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Consumo acumulado (kWh)</h3>
+            <span class="kpi-sub">Preditivo contra higrostato</span>
+          </div>
+          <div class="chart-box-large">
+            <canvas id="canvas-energia-acum"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Melhores sequências entre as 64</h3>
+            <span class="kpi-sub">Primeiro a estabilidade, depois o menor custo</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Sequência</th>
+                  <th>1º Comando</th>
+                  <th>UR em 60 min</th>
+                  <th>Na faixa</th>
+                  <th>Energia</th>
+                  <th>Custo</th>
+                </tr>
+              </thead>
+              <tbody id="mpc-ranking-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Resultado por zona</h3>
+            <span class="kpi-sub">Mesmo clima e mesmos visitantes nos dois controles</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Zona</th>
+                  <th>Faixa</th>
+                  <th>Preditivo</th>
+                  <th>Higrostato</th>
+                  <th>Economia</th>
+                  <th>Tempo na faixa</th>
+                  <th>Custo</th>
+                </tr>
+              </thead>
+              <tbody id="comp-zones-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         ABA 3: REDE LORAWAN, INJEÇÃO MANUAL / API & EXPORTAÇÃO DE HISTÓRICO CSV
+    ========================================================================= -->
+    <section id="tab-lorawan" class="tab-panel">
+      <div class="two-col-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Enviar uma leitura manual</h3>
+            <span class="kpi-sub">Seção 3.3 do relatório</span>
+          </div>
+          <p class="insp-sub">
+            Simule uma leitura fora do normal (por exemplo, 64% UR depois de uma infiltração) e veja o controle reagir na hora.
+          </p>
+
+          <form id="form-inject-reading">
+            <div class="form-grid-2">
+              <div>
+                <label class="control-section-lbl" for="api-zone-select">Zona</label>
+                <select id="api-zone-select" class="input-full">
+                  <option value="P-01">P-01 — Palácio: Ala Esquerda</option>
+                  <option value="P-02">P-02 — Palácio: Ala Direita</option>
+                  <option value="P-03">P-03 — Palácio: Circulação Central</option>
+                  <option value="RT-01">RT-01 — Reserva Técnica: Sala Piloto</option>
+                  <option value="RT-02">RT-02 — Reserva Técnica: Perímetro Norte</option>
+                  <option value="RT-03">RT-03 — Reserva Técnica: Arquivo Histórico</option>
+                </select>
+              </div>
+              <div>
+                <label class="control-section-lbl" for="api-ur-input">Umidade relativa (%)</label>
+                <input type="number" id="api-ur-input" class="input-full" step="0.1" min="25" max="95" value="58.5" />
+              </div>
+              <div>
+                <label class="control-section-lbl" for="api-temp-input">Temperatura (°C)</label>
+                <input type="number" id="api-temp-input" class="input-full" step="0.1" min="12" max="35" value="21.2" />
+              </div>
+              <div>
+                <label class="control-section-lbl" for="api-bat-input">Bateria do sensor (%)</label>
+                <input type="number" id="api-bat-input" class="input-full" step="1" min="5" max="100" value="92" />
+              </div>
+            </div>
+
+            <button type="submit" class="btn-full btn-emerald" style="margin-top:12px;">
+              Enviar leitura e recalcular
+            </button>
+            <div id="api-submit-feedback" class="text-emerald" style="font-size:12px; font-weight:700; margin-top:6px;"></div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Pacote enviado pelo sensor (JSON)</h3>
+            <span class="kpi-sub">LoRaWAN 915 MHz, criptografado</span>
+          </div>
+          <pre id="api-json-preview" class="json-preview"></pre>
+          <div class="insp-acervo-box" style="margin-top:10px; margin-bottom:0;">
+            <strong>Se a rede cair:</strong> o controle roda no próprio prédio e o gateway guarda as leituras. Se um sensor falhar, a zona volta ao higrostato local (modo seguro).
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Histórico de leituras</h3>
+          <button type="button" id="btn-export-csv" class="btn btn-active">
+            Baixar histórico (.csv)
+          </button>
+        </div>
+        <div class="table-wrap table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Horário</th>
+                <th>Zona</th>
+                <th>Dispositivo</th>
+                <th>Temp</th>
+                <th>Umidade</th>
+                <th>Orvalho</th>
+                <th>Modo</th>
+                <th>Plano</th>
+                <th>Desumidificador</th>
+                <th>RSSI</th>
+                <th>Bateria</th>
+              </tr>
+            </thead>
+            <tbody id="telemetry-log-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================
+         ABA 4: ENERGIA SOLAR NO EDIFÍCIO Nº 4 & AVALIAÇÃO ECONÔMICA (EMPENHOS)
+    ========================================================================= -->
+    <section id="tab-solar" class="tab-panel">
+      <div class="two-col-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Energia solar no Edifício nº 4</h3>
+            <span class="kpi-sub">Lei nº 14.300/2022 &amp; Portaria IPHAN nº 289/2025</span>
+          </div>
+          <p class="insp-sub">
+            O telhado do Edifício nº 4 fica em parte à sombra das árvores dos jardins. Mude os valores e compare <strong>microinversores</strong> com um inversor string.
+          </p>
+
+          <div class="slider-row">
+            <div class="slider-head">
+              <span>Módulos de 550 Wp</span>
+              <span id="lbl-solar-modulos" class="text-amber">24 módulos</span>
+            </div>
+            <input type="range" id="slider-solar-modulos" min="8" max="44" step="2" value="24" />
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-head">
+              <span>Sombra das árvores</span>
+              <span id="lbl-solar-sombra" class="text-cyan">28%</span>
+            </div>
+            <input type="range" id="slider-solar-sombra" min="0" max="60" step="2" value="28" />
+          </div>
+
+          <span class="control-section-lbl">Tipo de inversor</span>
+          <div class="segmented-group seg-2">
+            <button type="button" class="seg-btn active" data-solar-tech="microinversor">Microinversores (recomendado)</button>
+            <button type="button" class="seg-btn" data-solar-tech="string">Inversor string</button>
+          </div>
+
+          <div class="insp-metrics-grid">
+            <div class="insp-metric">
+              <div class="insp-lbl">Potência instalada</div>
+              <div class="insp-val" id="solar-kwp-val">13.2 kWp</div>
+            </div>
+            <div class="insp-metric">
+              <div class="insp-lbl">Geração estimada</div>
+              <div class="insp-val text-cyan" id="solar-mensal-val">1.080 kWh/mês</div>
+            </div>
+            <div class="insp-metric">
+              <div class="insp-lbl">Compensação na conta</div>
+              <div class="insp-val text-emerald" id="solar-economia-val">R$ 9.590,00/ano</div>
+            </div>
+            <div class="insp-metric">
+              <div class="insp-lbl">Ganho do microinversor</div>
+              <div class="insp-val text-amber" id="solar-ganho-micro">+44% sob sombra</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Controle e solar contados separadamente</h3>
+            <span class="kpi-sub">Seções 3.2 e 4.3</span>
+          </div>
+          <div class="chart-box">
+            <canvas id="canvas-solar-comp"></canvas>
+          </div>
+          <div class="insp-metrics-grid grid-3">
+            <div class="insp-metric">
+              <div class="insp-lbl">Economia do controle</div>
+              <div class="insp-val text-emerald" style="font-size:12.5px;" id="sep-mpc-anual">R$ 4.820/ano</div>
+            </div>
+            <div class="insp-metric">
+              <div class="insp-lbl">Geração solar</div>
+              <div class="insp-val text-cyan" style="font-size:12.5px;" id="sep-solar-anual">R$ 9.590/ano</div>
+            </div>
+            <div class="insp-metric">
+              <div class="insp-lbl">Emissões evitadas</div>
+              <div class="insp-val" style="font-size:12.5px;" id="sep-co2-anual">680 kg CO₂/ano</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Retorno do investimento (piloto e expansão)</h3>
+            <span class="kpi-sub">Tabela 4 do relatório</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Cenário</th>
+                  <th>Hipótese por aparelho</th>
+                  <th>Economia por ano</th>
+                  <th>Retorno das compras</th>
+                  <th>Com horas das equipes</th>
+                </tr>
+              </thead>
+              <tbody id="payback-scenarios-tbody"></tbody>
+            </table>
+          </div>
+          <p class="table-note">12 desumidificadores, tarifa média ilustrativa de R$ 0,80/kWh e R$ 1.000 por ano de custo recorrente. Compras ligadas à energia: R$ 37.135 (sem a sílica gel). Horas das equipes: R$ 26.800. O piloto custa cerca de R$ 10,6 mil e mostra qual cenário é o real, sem depender do solar.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Gastos com energia (Portal da Transparência)</h3>
+            <span class="kpi-sub">UASG 343015 · Enel Rio</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Empenho</th>
+                  <th>Ano</th>
+                  <th>Finalidade</th>
+                  <th>Liquidações</th>
+                  <th>Valor</th>
+                </tr>
+              </thead>
+              <tbody id="empenhos-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== MODAL INSTITUCIONAL DO PROJETO ACADÊMICO ==================== -->
+  <div id="project-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <div class="card-header">
+        <h2 class="card-title" id="modal-title" style="font-size:17px;">
+          UFCI/RJ · Tecnologia para Sustentabilidade (P2, 2026)
+        </h2>
+        <button type="button" id="btn-close-about" class="btn">Fechar</button>
+      </div>
+      <p style="color:var(--text-secondary); margin-top:4px;">
+        <strong>Projeto:</strong> Eficiência Energética em Edificações Históricas — Museu Imperial de Petrópolis (Ibram)<br />
+        <strong>Curso:</strong> Bacharelado em Engenharia da Computação — Campus Petrópolis
+      </p>
+      <div class="insp-acervo-box">
+        <strong>Integrantes do Grupo:</strong><br />
+        • Elisa Lacerda Moura<br />
+        • Marcos Oliveira do Rego<br />
+        • Pedro Lucas Gomes Soares<br />
+        • Pedro Rodrigues Couto
+      </div>
+      <p style="font-size:12.5px; color:var(--text-secondary);">
+        Este software demonstra na prática as <strong>5 frentes da proposta tecnológica</strong>:
+        (1) Monitoramento sem fio LoRaWAN 915 MHz com sensores SHT40 reversíveis sem furos (Portaria IPHAN nº 289/2025);
+        (2) Medição elétrica não invasiva com TC de núcleo bipartido SCT-013;
+        (3) Controle Preditivo Local (MPC) avaliando as 64 combinações horárias e o Ponto de Orvalho pela fórmula de Magnus;
+        (4) Microclima compartimentado passivo com sílica gel; e
+        (5) Estudo separado de microgeração solar com microinversores no Edifício nº 4.
+      </p>
+    </div>
+  </div>
+
+  <!-- Scripts modulares compatíveis tanto com servidor HTTP quanto abertura direta (file://) -->
+  <script src="js/config.js"></script>
+  <script src="js/physics-mpc.js"></script>
+  <script src="js/floorplans.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
